@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'catalog.apps.CatalogConfig',
 ]
 
 MIDDLEWARE = [
@@ -75,8 +76,6 @@ WSGI_APPLICATION = 'blog.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 load_dotenv()
-# env = environ.Env(DEBUG=[bool, False])
-# environ.Env.read_env(env_file=BASE_DIR)
 
 DATABASES = {
     'default': {
