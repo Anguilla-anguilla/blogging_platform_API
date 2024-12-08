@@ -1,6 +1,9 @@
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.filters import SearchFilter
+from django.db.models import Q
+
 import datetime as dt
 
 from .models import Article, Categories, Tags
@@ -109,19 +112,36 @@ class SingleArticleView(APIView):
         return Response(article_serializer.errors, 
                         status=status.HTTP_400_BAD_REQUEST)
     
-    def delete(self, request, article_id):
+    def delete(self, article_id):
         article_instance = self.get_article(article_id):
         if not article_instance:
             return Response(status=status.HTTP_404_NOT_FOUND)
         article_instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def get(self, request, article_id):
+    def get(self, article_id):
         article_instance = self.get_article(article_id)
         if not article_instance:
             return Response(status=status.HTTP_404_NOT_FOUND)
         article_serializer = ArticleSerializer(isinstance=article_instance)
         return Response(article_serializer.data, 
                         status=status.HTTP_200_OK)
-    
-    
+
+
+class ArticleViewSet(viewsets.ModelViewSet):
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ['title', 'content', 'category_id__category', 'tags_id__tag']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_term = self.request.query_params.get('search', None)
+        if search_term:
+            queryset = queryset.filter(
+                Q(title__icontains=search_term) |
+                Q(contenr__icontains=search_term) |
+                Q(category_id__category__icontains=search_term) |
+                Q(tags__name__icontains=search_term)
+            ).distinct()
+        return queryset
