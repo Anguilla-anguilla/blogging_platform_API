@@ -59,7 +59,7 @@ class SingleArticleView(APIView):
 
         tag_list = request.data.get('tags', [])
         tags = self.check_tags(tag_list)
-        
+ 
         data = {
             'title': request.data.get('title'),
             'content': request.data.get('content'),
@@ -76,12 +76,12 @@ class SingleArticleView(APIView):
         
         return Response(article_serializer.data,
                          status=status.HTTP_400_BAD_REQUEST)
-    
+
     def put(self, request, article_id):
         article_instance = self.get_article(article_id)
         if not article_instance:
             Response(status=status.HTTP_404_NOT_FOUND)
-        
+
         data = {}
         if request.data.get('title'):
             data['title'] = request.data.get('title')
@@ -96,8 +96,8 @@ class SingleArticleView(APIView):
             tags = self.check_tags(tag_list)
             data['tags'] = tags
         if len(data) > 0:
-            data['updatedAt']: dt.datetime.now().strftime('%d.%m.%Y')
-        
+            data['updatedAt'] = dt.datetime.now().strftime('%d.%m.%Y')
+
         article_serializer = ArticleSerializer(isinstance=article_instance,
                                                data=data,
                                                partial=True,
@@ -108,3 +108,10 @@ class SingleArticleView(APIView):
                             status=status.HTTP_200_OK)
         return Response(article_serializer.errors, 
                         status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, article_id):
+        article_instance = self.get_article(article_id):
+        if not article_instance:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        article_instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
