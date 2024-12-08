@@ -115,3 +115,13 @@ class SingleArticleView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         article_instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def get(self, request, article_id):
+        article_instance = self.get_article(article_id)
+        if not article_instance:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        article_serializer = ArticleSerializer(isinstance=article_instance)
+        return Response(article_serializer.data, 
+                        status=status.HTTP_200_OK)
+    
+    
