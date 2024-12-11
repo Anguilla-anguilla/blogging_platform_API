@@ -118,7 +118,7 @@ class SingleArticleView(GenericAPIView):
         if len(data) > 0:
             data['updatedAt'] = dt.datetime.now().strftime('%Y-%m-%d')
 
-        article_serializer = ArticleSerializer(isinstance=article_instance,
+        article_serializer = ArticleSerializer(instance=article_instance,
                                                data=data,
                                                partial=True,
                                                context={'request':request})
@@ -140,7 +140,7 @@ class SingleArticleView(GenericAPIView):
         article_instance = self.get_article(article_id)
         if not article_instance:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        article_serializer = ArticleSerializer(isinstance=article_instance)
+        article_serializer = ArticleSerializer(instance=article_instance)
         return Response(article_serializer.data, 
                         status=status.HTTP_200_OK)
 
