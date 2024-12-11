@@ -129,14 +129,14 @@ class SingleArticleView(GenericAPIView):
         return Response(article_serializer.errors, 
                         status=status.HTTP_400_BAD_REQUEST)
     
-    def delete(self, article_id):
+    def delete(self, request, article_id):
         article_instance = self.get_article(article_id)
         if not article_instance:
             return Response(status=status.HTTP_404_NOT_FOUND)
         article_instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def get(self, article_id):
+    def get(self, request, article_id):
         article_instance = self.get_article(article_id)
         if not article_instance:
             return Response(status=status.HTTP_404_NOT_FOUND)
