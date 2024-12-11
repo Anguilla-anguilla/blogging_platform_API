@@ -2,7 +2,10 @@ from rest_framework import status, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter
+from rest_framework.generics import GenericAPIView
 from django.db.models import Q
+from drf_spectacular.utils import extend_schema
+
 
 import datetime as dt
 
@@ -12,7 +15,46 @@ from .serializers import (ArticleSerializer,
                           TagsSerializer)
 
 
-class SingleArticleView(APIView):
+class PostArticleView(GenericAPIView):
+    serializer_class = ArticleSerializer
+
+    @extend_schema(request=ArticleSerializer)
+    def post(self, request):
+        single_article_view = SingleArticleView()
+
+        category_name = request.data.get('category')
+        category = single_article_view.check_category(category_name)
+        if not category:
+            return Response({"error": "Invalid category"}, status=status.HTTP_400_BAD_REQUEST)
+
+        tag_list = request.data.get('tags', [])
+        tags = single_article_view.check_tags(tag_list)
+        if isinstance(tags, Response):
+            return tags
+
+        data = {
+            'title': request.data.get('title'),
+            'content': request.data.get('content'),
+            'category_id': category.id,
+            'tags_id': [tag.id for tag in tags],
+            'createdAt': dt.datetime.now().strftime('%Y-%m-%d'),
+            'updatedAt': None
+        }
+        print(data)
+        article_serializer = ArticleSerializer(data=data)
+        if article_serializer.is_valid():
+            article_serializer.save()
+            return Response(article_serializer.data,
+                                status=status.HTTP_201_CREATED)
+        print(article_serializer.errors)
+        
+        return Response(article_serializer.data,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
+class SingleArticleView(GenericAPIView):
+    serializer_class = ArticleSerializer
+
     def get_article(self, article_id):
         try:
             return Article.objects.get(id=article_id)
@@ -38,8 +80,7 @@ class SingleArticleView(APIView):
             if category_serializer.is_valid():
                 category = category_serializer.save()
             else:
-                return Response(category_serializer.errors, 
-                                status=status.HTTP_400_BAD_REQUEST)
+                return None
         return category
     
     def check_tags(self, tag_list):
@@ -47,38 +88,14 @@ class SingleArticleView(APIView):
         for tag_name in tag_list:
             tag = self.get_tag(tag_name)
             if tag is None:
-                tag_serializer = TagsSerializer(data={'tag', tag_name})
+                tag_serializer = TagsSerializer(data={'tag': tag_name})
                 if tag_serializer.is_valid():
                     tag = tag_serializer.save()
                 else:
                     return Response(tag_serializer.errors,
                                     status=status.HTTP_400_BAD_REQUEST)
-            tags.append(tag.id)
+            tags.append(tag)
         return tags
-
-    def post(self, request):
-        category_name = request.data.get('category')
-        category = self.check_category(category_name)
-
-        tag_list = request.data.get('tags', [])
-        tags = self.check_tags(tag_list)
- 
-        data = {
-            'title': request.data.get('title'),
-            'content': request.data.get('content'),
-            'category': category.id,
-            'tags': tags,
-            'createdAt': dt.datetime.now().strftime('%d.%m.%Y'),
-            'updatedAt': None
-        }
-        article_serializer = ArticleSerializer(data=data)
-        if article_serializer.is_valid():
-            article_serializer.save()
-            return Response(article_serializer.data,
-                             status=status.HTTP_201_CREATED)
-        
-        return Response(article_serializer.data,
-                         status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, article_id):
         article_instance = self.get_article(article_id)
@@ -99,7 +116,7 @@ class SingleArticleView(APIView):
             tags = self.check_tags(tag_list)
             data['tags'] = tags
         if len(data) > 0:
-            data['updatedAt'] = dt.datetime.now().strftime('%d.%m.%Y')
+            data['updatedAt'] = dt.datetime.now().strftime('%Y-%m-%d')
 
         article_serializer = ArticleSerializer(isinstance=article_instance,
                                                data=data,
@@ -113,7 +130,7 @@ class SingleArticleView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, article_id):
-        article_instance = self.get_article(article_id):
+        article_instance = self.get_article(article_id)
         if not article_instance:
             return Response(status=status.HTTP_404_NOT_FOUND)
         article_instance.delete()
@@ -140,8 +157,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
         if search_term:
             queryset = queryset.filter(
                 Q(title__icontains=search_term) |
-                Q(contenr__icontains=search_term) |
+                Q(content__icontains=search_term) |
                 Q(category_id__category__icontains=search_term) |
-                Q(tags__name__icontains=search_term)
+                Q(tags_id__tag__icontains=search_term)
             ).distinct()
         return queryset
