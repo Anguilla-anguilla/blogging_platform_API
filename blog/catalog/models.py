@@ -5,14 +5,14 @@ class Categories(models.Model):
     category = models.CharField(max_length=125, verbose_name='category')
 
     def __str__(self):
-        return self.title
+        return self.category
 
 
 class Tags(models.Model):
     tag = models.CharField(max_length=125, verbose_name='tag')
 
     def __str__(self):
-        return self.title
+        return self.tag
 
 
 class Article(models.Model):
